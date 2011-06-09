@@ -1,0 +1,66 @@
+<html>
+<head><title>Plog Options</title></head>
+<script type="text/javascript">
+function $(elementId) { return document.getElementById(elementId); }
+
+// Saves options to localStorage.
+function save_options() {
+  var select = $("start-page");
+  var page = select.children[select.selectedIndex].value;
+  localStorage["start_page"] = page;
+  
+  var server = $("server-url").value;
+  localStorage["server_url"] = server;
+
+  // Update status to let user know options were saved.
+  var status = $("status");
+  status.innerHTML = "Optionen gespeichert";
+  setTimeout(function() {
+    status.innerHTML = "";
+  }, 750);
+}
+
+// Restores select box state to saved value from localStorage.
+function restore_options() {
+  var page = localStorage["start_page"];
+  if (page) {
+    var pageSelect = $("start-page");
+    for (var i = 0; i < pageSelect.children.length; i++) {
+      var child = pageSelect.children[i];
+      if (child.value == page) {
+        child.selected = "true";
+        break;
+      }
+    }  
+  }
+  
+  var server = localStorage["server_url"];
+  if (server) {
+    $("server-url").value = server;
+  }
+}
+
+</script>
+
+<body onload="restore_options()">
+<table>
+<tr>
+<td>Plog Server: </td>
+<td><input type="text" id="server-url"/></td>
+</tr><tr>
+<td>Klick auf 'Plog' &ouml;ffnet:</td>
+<td>
+<select id="start-page">
+ <option value="/c.html">Zeitleiste</option>
+ <option value="/s.html">Suchseite</option>
+</select>
+</td></tr>
+<tr><td align="center">
+<button onclick="save_options()">Speichern</button>
+</td>
+<td><span id="status"/></td>
+</tr></table>
+
+
+</body>
+</html>

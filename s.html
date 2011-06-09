@@ -1,0 +1,54 @@
+<html>
+	<title>Plog</title>
+	<head>
+		<link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Ubuntu:regular,bold&subset=Latin">
+		<style type="text/css">
+		  body { font-family: ubuntu; }
+		  #link-container { height: 90%; overflow:auto;}
+		  #link-container ol { list-style: none; }
+		</style>
+	<script type="text/javascript" src="jquery-1.6.1.min.js"></script>
+	<script type="text/javascript" src="plog.js"></script>
+</head>
+<body>
+
+<div style="text-align:center">
+  <div style="width: 100%; ">
+    <div>
+      <input type="text" id="suchbox" size="80"/>
+    </div>
+    <div id="link-container" style="text-align:left;"/>
+    
+  </div>
+</div>
+
+<div style="display:none;" id="link-cell-template">
+<a><span id="link-url"/></a><br/>
+<span id="link-comment" style="font-size:0.8em;margin-left:20px;"/>
+</div>
+
+  <script type="text/javascript">  
+
+var links = null;
+  
+$(document).ready(function() {
+  links = new Links(function() {});
+  links.setCurrentLinkRenderer(2);
+
+  var applyFilter = function() { 
+    var filterRegexp = $('#suchbox').val();
+    links.setFilter(filterRegexp);
+    links.renderLinks();
+  };
+
+  $('#suchbox').keyup(function(e) {
+    applyFilter();  
+  });
+
+  $('#suchbox').focus();
+
+});
+  </script>
+</body>
+</html>
+
