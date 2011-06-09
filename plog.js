@@ -81,6 +81,7 @@ BaseRenderer.prototype.getRenderArea = function () {
 };
 BaseRenderer.prototype.clearArea = function () {
 	this.getRenderArea().find('*').fadeOut();
+	this.getRenderArea().empty();	
 };
 
 function SimpleRenderer () { BaseRenderer.call(this); };
@@ -99,10 +100,10 @@ SimpleRenderer.prototype.render = function (links) {
 	  newEl.find('#link-comment').html(linkData.comment);
 	  newEl.find('#link-date').text(linkData.date);
 	  newEl.find('#link-key').text(linkData.key);      
-	  newEl.click(function() {
+/*	  newEl.click(function() {
 		
 		newEl.openOverlay();
-	  });
+	  });*/
 	  newEl.appendTo(parElement.append('<li></li>').find('li').last());
 	}
   });

@@ -6,21 +6,19 @@
 		  body { font-family: ubuntu; }
 		  #link-container { height: 90%; overflow:auto;}
 		  #link-container ol { list-style: none; }
+		  .selected { background-color: #ccc; }
 		</style>
 	<script type="text/javascript" src="jquery-1.6.1.min.js"></script>
 	<script type="text/javascript" src="plog.js"></script>
 </head>
 <body>
 
-<div style="text-align:center">
-  <div style="width: 100%; ">
-    <div>
-      <input type="text" id="suchbox" size="80"/>
-      <input type="submit" id="clear" value="[X]" style="margin-left: 20px;"/>
-    </div>
-    <div id="link-container" style="text-align:left;"/>
-    
+<div style="text-align:center;width:100%;">
+  <div>
+    <input type="text" id="suchbox" size="80"/>
+    <input type="submit" id="clear" value="[X]" style="margin-left: 20px;"/>
   </div>
+  <div id="link-container" style="text-align:left;"/>
 </div>
 
 <div style="display:none;" id="link-cell-template">
@@ -29,11 +27,41 @@
 </div>
 
   <script type="text/javascript">  
+var curSelect = -1, maxSelect;
+function selectUp() {
+  curSelect = curSelect -1;
+  if (curSelect < 0)  curSelect = 0;
+  selectShow();
+}
+
+function selectDown() {
+  curSelect = curSelect +1;
+  if (curSelect > maxSelect) curSelect = maxSelect;
+  selectShow();
+}
+
+function selectShow() {
+  if (curSelect > -1) {
+    var divs = $('#link-container div')
+    divs.removeClass('selected');
+    divs.eq(curSelect).addClass('selected');
+  }
+}
+
+function selectOpen() {
+  if (curSelect > -1) {
+    var divs = $('#link-container').find('div');
+    var v = divs.eq(curSelect).find('a').attr('href');
+    window.location.href = v;
+  }
+}
 
 var links = null;
   
 $(document).ready(function() {
-  links = new Links(function() {});
+  links = new Links(function() {
+    maxSelect = $('#link-container').find('li').length - 1;
+  });
   links.setShortenUrlText(false);
   links.setCurrentLinkRenderer(2);
 
@@ -41,20 +69,48 @@ $(document).ready(function() {
     var filterRegexp = $('#suchbox').val();
     links.setFilter(filterRegexp);
     links.renderLinks();
+    curSelect = 0;
+    maxSelect = $('#link-container').find('li').length - 1;    
+    selectShow();
   };
-
-  $('#suchbox').keyup(function(e) {
-    applyFilter();  
-  });
-
-  $('#suchbox').focus();
-  
-  $('#clear').click(function() {
+  var clearFilter = function() {
     $('#suchbox').val('');
     applyFilter();
     $('#suchbox').focus();
+  };
+
+  $('#suchbox').keyup(function(e) {
+    var kc = e.keyCode;
+    if (kc == 13 || kc == 38 || kc == 40 || kc == 27) 
+     return;
+    applyFilter();  
+  });
+  
+  $('#clear').click(function() {
+    clearFilter();
   });
 
+  $(document).keydown(function(e) {
+    var fkt = null;
+    switch (e.keyCode) {
+      case 27:
+        fkt = clearFilter;
+        break;
+      case 38: //up
+        fkt = selectUp;
+        break;
+      case 40: //down
+        fkt = selectDown;
+        break;
+      case 13: //enter
+        fkt = selectOpen;
+    }
+    if (fkt) {
+      e.preventDefault();    
+      fkt.call();
+    }
+  });
+  $('#suchbox').focus();
 });
   </script>
 </body>
