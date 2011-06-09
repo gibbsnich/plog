@@ -7,6 +7,7 @@
     "default_title":  "Plog this!",
     "default_popup":  "popup.html"
   },
+  "options_page": "options.html",
   "permissions": [
     "http://*/*",
     "https://*/*",

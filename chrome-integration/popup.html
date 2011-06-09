@@ -6,8 +6,20 @@
   .result { display:none; font-weight:bold; /*margin-left: 24px;*/}
 </style>
 <script>
+
+function getStoredServerUrl() {
+  var sp = localStorage["server_url"];
+  return sp ? sp : 'http://localhost:8080';
+}
+
+function getStoredStartPage() {
+  var sp = localStorage["start_page"];
+  var su = getStoredServerUrl();
+  return sp ? (su + sp) : (su + '/c.html');
+}
+
 function openPlog() {
-	chrome.tabs.create({'url': 'http://localhost:8080/c.html'});
+	chrome.tabs.create({'url': getStoredStartPage()});
 }
 function $(elementId) { return document.getElementById(elementId); }
 function toggleVisible(bool, el) { 
@@ -36,7 +48,7 @@ function sendRequest() {
       }
     };    
     var params = 'url='+escape(tab.url)+'&comment='+escape($('comment').value);
-    xhr.open('POST', 'http://localhost:8080/p', true);
+    xhr.open('POST', getStoredServerUrl() + '/p', true);
     xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
     xhr.send(params);
   });

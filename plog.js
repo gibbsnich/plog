@@ -1,11 +1,16 @@
 function Links(callback) {
   this.links = [];  
+  this.shortenUrls = true;
   //this.setCurrentLinkRenderer(currentRenderer);
   that = this;
   this.readLinks(function() {
 		that.renderLinks();
 		callback();
 	});
+};
+
+Links.prototype.setShortenUrlText = function (bool) {
+  this.shortenUrls = bool;
 };
 
 Links.prototype.shortenUrlText = function (urlText) {
@@ -33,7 +38,7 @@ Links.prototype.addLink = function (linkData) {
   this.links.unshift({      'visible':       true,
 							'key':           linkData[0], 
 							'url':           linkData[1], 
-							'urlText':       this.shortenUrlText(linkData[1]),
+							'urlText':       this.shortenUrls ? this.shortenUrlText(linkData[1]) : linkData[1],
 							'comment':       linkData[2], 
 							'searchComment': this.prepareCommentForFilter(linkData[2]),
 							'date':          linkData[3]       });

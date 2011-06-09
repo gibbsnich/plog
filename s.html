@@ -16,6 +16,7 @@
   <div style="width: 100%; ">
     <div>
       <input type="text" id="suchbox" size="80"/>
+      <input type="submit" id="clear" value="[X]" style="margin-left: 20px;"/>
     </div>
     <div id="link-container" style="text-align:left;"/>
     
@@ -33,6 +34,7 @@ var links = null;
   
 $(document).ready(function() {
   links = new Links(function() {});
+  links.setShortenUrlText(false);
   links.setCurrentLinkRenderer(2);
 
   var applyFilter = function() { 
@@ -46,6 +48,12 @@ $(document).ready(function() {
   });
 
   $('#suchbox').focus();
+  
+  $('#clear').click(function() {
+    $('#suchbox').val('');
+    applyFilter();
+    $('#suchbox').focus();
+  });
 
 });
   </script>
