@@ -1,0 +1,15 @@
+{
+  "name": "Plog",
+  "version": "1.0",
+  "description": "Chrome-Plog-Integration-Extension",
+  "browser_action": {
+    "default_icon":   "plog.png",
+    "default_title":  "Plog this!",
+    "default_popup":  "popup.html"
+  },
+  "permissions": [
+    "http://*/*",
+    "https://*/*",
+    "tabs"
+  ]
+}

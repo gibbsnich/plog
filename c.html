@@ -1,0 +1,435 @@
+<html>
+	<title>Plog</title>
+	<head>
+		<link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Ubuntu:regular,bold&subset=Latin">
+		<style type="text/css">
+		  body { font-family: ubuntu; }
+		  textarea { border: solid 1px; font-family: ubuntu;}
+		  input { border: solid 1px;font-family: ubuntu; }
+		  
+		  #menu { list-style:none; }
+		  #menu li { width: 500px; }
+		  #menu .menu-header {  margin-right: 16px; background: #ccc; cursor: pointer; }
+		  
+		  #menu .a-container { margin-bottom: 12px; padding: 8px; }
+		  #menu .a-container .a-container-header { font-size: 1.2em; color: #666; margin-left: 24px; margin-bottom: 12px; }
+		  
+		  .main-container { border: dotted 1px #666; margin-bottom: 12px; padding: 8px; }
+		  .main-container .main-container-header { font-size: 1.2em; color: #666; margin-left: 24px; margin-bottom: 12px; }
+		  
+		  .link-cell { border: 1px solid #ddd;  margin: 8px; padding: 4px; }
+ 		  .link-cell #link-url, .link-cell #link-date { font-size: 0.8em }
+		  .link-cell #link-comment { /*font-size: 0.8em;*/ margin-left: 16px; }
+		  .link-cell a { color: black; }
+		  .link-cell a:hover { background: #999; }
+		  .link-action-button { cursor: pointer; text-decoration:underline; background: #ccc; color: #888;font-weight:bold; padding:6px; }
+		  #link-container { height: 60%; overflow:auto;}
+		  #link-container ol { list-style: none; }
+          #link-container ol li { float: left; width: 300px; height:100px; }
+		  
+		  .day-header {margin-left: 8px;font-size:0.8em;font-weight:bold;}
+		  .hour-header {margin-left:6px; font-size:0.8em;}
+		  .hour-div {margin-top: 4px;background-color:#FFFF95;}
+		  .day-div {width: 200px;padding: 4px;border: 2px solid #B6DAFF;float:left;margin:4px;}
+		  .link-comment {margin-left: 4px; margin-top: 4px;}
+		  .link-url {font-size:0.8em;}
+		</style>
+
+		<script type="text/javascript" src="jquery-1.6.1.min.js"></script>
+		<script type="text/javascript" src="openoverlay.js"></script>
+		<script type="text/javascript" src="raphael-min.js"></script>
+	</head>
+
+	<body>
+
+<div id="leiste"></div>
+
+<br />
+
+  <div style="float:right;" id="ui-options">
+    <div style="background:#ccc;" id="ui-options-pane">	
+	<select id="ui-select" size="1"></select>
+    </div>
+  </div>
+
+<br />
+
+  
+<ol id="menu" style="">
+  <li>
+    <div class="menu-header" id="new-link">
+    Neuer Link      
+    </div>
+    <div class="a-container" id ="new-link-container" style="width: 580px; display:none;" >
+<!--      <div class="a-container-header">Neuer Link</div>-->
+      <form action="/p" method="post">
+        <table>
+        <tr><td>URL:</td><td><input type="text" size="60" name="url"/>&nbsp;</td></tr>
+        <tr><td valign="top">Kommentar:</td><td><textarea cols="54" rows="5" name="comment"></textarea></td></tr>
+        <tr align="right"><td colspan="2"><input type="submit" value="OK"/>&nbsp;</td></tr>
+        </table>
+      </form>
+    </div>
+  </li>
+
+  <li>
+    <div class="menu-header" id="new-comment">
+    Neuer Kommentar
+    </div>
+    <div class="a-container" id ="new-comment-container" style="width: 580px; display:none;" >
+<!--      <div class="a-container-header">Neuer Kommentar</div>-->
+      <form action="/p" method="post">
+        <table>
+        <tr><td valign="top">Kommentar:</td><td><textarea cols="54" rows="5" name="comment"></textarea></td></tr>
+        <tr align="right"><td colspan="2"><input type="submit" value="OK"/>&nbsp;</td></tr>
+        </table>
+      </form>
+    </div>
+
+  </li>
+</ol>
+
+<br />
+
+
+<div id="link-cell-template" style="display:none;" class="link-cell">
+  <div><a name="link-target" href="bla.html">
+  <span id="link-url">URL</span> (#<span id="link-key">0</span>)
+  </a></div>
+  <div id="link-comment">COMMENT</div>
+  <div id="link-date">DATE</div>
+</div>
+
+<div class="main-container">
+  
+  <div id="link-container">
+  </div>
+    
+</div>
+  
+  <div style="float:left;" id="link-refresh">
+    <span id="link-refresh-button" class="link-action-button">Neu laden</span>  
+  </div>
+  
+  <div style="float:right;" id="link-filter">
+    <span id="link-filter-button" class="link-action-button" style="float:right;">Filtern</span>  
+    <div style="display:none;background:#ccc;" id="link-filter-options">
+    <!--Name:--> <input type="text" size="40" id="name-filter"/><br />
+    <input type="submit" value="OK" id="link-filter-start"/>
+    <input type="submit" value="[X]" id="link-filter-clear" style="float:right;"/>
+    </div>
+  </div>
+  
+  <script type="text/javascript">  
+  
+function Links(callback) {
+  this.links = [];  
+  //this.setCurrentLinkRenderer(currentRenderer);
+  that = this;
+  this.readLinks(function() {
+		that.renderLinks();
+		callback();
+	});
+};
+
+Links.prototype.shortenUrlText = function (urlText) {
+  var len = urlText.length;
+  if (len > 40) {
+    urlText = urlText.substring(0, 24) + ' [...] ' + urlText.substring(len-24, len-1);
+  }                 
+  return urlText;
+};
+
+Links.prototype.readLinks = function (callback) {
+  $.getJSON('/l', function(json) {
+    $.each(json, function(i, item) {
+      if (i > 0)  links.addLink(item); // skip header..        
+    });
+    callback();
+  });
+};
+
+Links.prototype.clearLinks = function () {
+	this.links = [];
+};
+
+Links.prototype.addLink = function (linkData) {  
+  this.links.unshift({      'visible':       true,
+							'key':           linkData[0], 
+							'url':           linkData[1], 
+							'urlText':       this.shortenUrlText(linkData[1]),
+							'comment':       linkData[2], 
+							'searchComment': this.prepareCommentForFilter(linkData[2]),
+							'date':          linkData[3]       });
+};
+ 
+
+Links.prototype.filterFields = ['url', 'searchComment'];
+                         
+Links.prototype.prepareCommentForFilter = function (comment) {  
+  return comment.replace(/(&auml;)|(&ouml;)|(&uuml;)|(&Auml;)|(&Ouml;)|(&Uuml;)|(&szlig;)/g, '.');
+};
+  
+Links.prototype.setFilter = function (nameRegexp) {
+  nameRegexp = nameRegexp.replace(/[^A-Za-z0-9 ]/g, '.');
+  nameRegexp = new RegExp(nameRegexp, 'i');
+  for (var lNum = 0; lNum < this.links.length; lNum++) {
+    var linkData = this.links[lNum];
+    var found = false;
+    for (var n = 0; n < this.filterFields.length; n++) {
+      if (linkData[this.filterFields[n]].match(nameRegexp)) {
+        found = true;
+        break;
+      }
+    }    
+    linkData.visible = found;
+  }
+};
+
+Links.prototype.clearFilter = function () {
+  for (var n = 0; n < this.links.length; n++) {
+	this.links[n].visible = true;
+  }
+};
+
+Links.prototype.currentLinkRenderer = 0;
+
+function BaseRenderer () {};
+BaseRenderer.prototype.getRenderArea = function () {
+	return $('#link-container');
+};
+BaseRenderer.prototype.clearArea = function () {
+	this.getRenderArea().find('*').fadeOut();
+};
+
+function SimpleRenderer () { BaseRenderer.call(this); };
+SimpleRenderer.prototype = new BaseRenderer();
+SimpleRenderer.prototype.constructor = SimpleRenderer;
+SimpleRenderer.prototype.name = 'RectRender';
+SimpleRenderer.prototype.render = function (links) {
+  this.clearArea();  
+  var parElement = this.getRenderArea().append('<ol></ol>').find('ol');
+  $.each(links, function(i, linkData) {    
+	if (linkData.visible == true) {
+	  var newEl = $('#link-cell-template').clone().attr('id', 'link-'+linkData.key).fadeIn('slow');        
+	  
+	  newEl.find('a').attr('href', linkData.url);           
+	  newEl.find('#link-url').text(linkData.urlText);
+	  newEl.find('#link-comment').html(linkData.comment);
+	  newEl.find('#link-date').text(linkData.date);
+	  newEl.find('#link-key').text(linkData.key);      
+	  newEl.click(function() {
+		
+		newEl.openOverlay();
+	  });
+	  newEl.appendTo(parElement.append('<li></li>').find('li').last());
+	}
+  });
+};
+
+function PutArray () { 
+	this.values = { };
+	this.keys = [];
+};
+PutArray.prototype.get = function (key) {
+	if (this.values[key] == null) {
+		var pa = new PutArray();
+		this.values[key] = pa;
+	}
+	if (!this.includeKey(key))
+		this.keys.unshift(key);
+	return this.values[key];
+};
+
+PutArray.prototype.includeKey = function (key) {
+	for (var n = 0; n < this.keys.length; n++) {
+		if (this.keys[n] == key)
+			return true;
+	}
+	return false;
+};
+
+PutArray.prototype.store = function (data) {
+	if (this.values['data'] == null)
+		this.values['data'] = [];
+	this.values['data'].unshift(data);
+};
+PutArray.prototype.length = function() {
+	return this.values['data'].length;
+};
+PutArray.prototype.getValue = function(idx) {
+	return this.values['data'][idx];
+};
+PutArray.prototype.getKeys = function() {
+	return this.keys;
+};
+
+function DailyRenderer () { BaseRenderer.call(this); };
+DailyRenderer.prototype = new BaseRenderer();
+DailyRenderer.prototype.constructor = DailyRenderer;
+DailyRenderer.prototype.name = 'DailyRenderer';
+DailyRenderer.prototype.dateRegexp = /([0-9]{4})\-([0-9]{2})\-([0-9]{2}) ([0-9]{2}):([0-9]{2})/;
+DailyRenderer.prototype.getDateAndHour = function (dateString) {
+	var m = this.dateRegexp.exec(dateString);
+	return { 'year': m[1], 'month': m[2], 'day': m[3], 'hour': m[4]	};
+}; 
+
+DailyRenderer.prototype.sortLinks = function (links) {
+  this.sortedLinks = new PutArray();
+  
+  for (var n = 0; n < links.length; n++) {
+	if (links[n].visible) {
+		var date = this.getDateAndHour(links[n].date);
+		this.sortedLinks.get(date.year).get(date.month).get(date.day).get(date.hour).store(links[n]);
+	}
+  }
+};
+
+DailyRenderer.prototype.genHtml = function () {
+  var html = '';
+  var years = this.sortedLinks.getKeys();
+  for (var yNum = years.length-1; yNum >= 0; yNum--) {
+	var year = years[yNum];
+	var months = this.sortedLinks.get(year).getKeys();
+	for (var mNum = months.length-1; mNum >= 0; mNum--) {
+		var month = months[mNum];
+		var days = this.sortedLinks.get(year).get(month).getKeys();
+		for (var dNum = days.length-1; dNum >= 0; dNum--) {
+			var day = days[dNum];
+			html += '<div class="day-div"><span class="day-header">'+day+'.'+month+'.'+year+'</span><br/>';
+			var hours = this.sortedLinks.get(year).get(month).get(day).getKeys();
+			for (var hNum = 0; hNum < hours.length; hNum++) {
+				var hour = hours[hNum];
+				html += '<div class="hour-div"><span class="hour-header">'+hour+':00</span><br/>';
+				var links = this.sortedLinks.get(year).get(month).get(day).get(hour);
+				for (var lNum = 0; lNum < links.length(); lNum++) {
+					var link = links.getValue(lNum);
+					html += '<div><span class="link-comment">'+link.comment+'</span>';
+					if (link.url.length > 0) {
+						html += ' <a href="'+link.url+'"><span class="link-url">['+link.urlText+']</span></a>'
+					}
+					html += '</div>';
+				}
+				html += '</div>';
+			}		
+			html += '</div>';
+		}
+	}
+  }
+  return html;
+};
+
+DailyRenderer.prototype.render = function (links) {
+  this.clearArea();  
+  this.sortLinks(links);
+  this.getRenderArea().html(this.genHtml());
+};
+
+function TableDailyRenderer () { DailyRenderer.call(this); };
+TableDailyRenderer.prototype = new DailyRenderer();
+TableDailyRenderer.prototype.constructor = TableDailyRenderer;
+TableDailyRenderer.prototype.name = 'TableDailyRenderer';
+TableDailyRenderer.prototype.genHtml = function () {
+
+
+
+	return "<table border><tr><td>"+this.sortedLinks.getKeys()[0]+"</td></tr></table>";
+};
+
+Links.prototype.linkRenderers = [new DailyRenderer(), new TableDailyRenderer(), new SimpleRenderer()];
+
+Links.prototype.renderLinks = function () {
+  this.linkRenderers[this.currentLinkRenderer].render(this.links);
+};
+
+Links.prototype.getRendererNames = function () {
+	var names = [];
+	for (var n = 0; n < this.linkRenderers.length; n++) {
+		names[n] = this.linkRenderers[n].name;
+	}
+	return names;
+};
+
+Links.prototype.setCurrentLinkRenderer = function (num) {
+	/*if (num < 0)
+		num = 0;
+	else if (num > this.linkRenderers.length -1)
+		num = this.linkRenderers.length-1;*/
+	this.currentLinkRenderer = num;	
+};
+
+var links = null;
+  
+$(document).ready(function() {
+
+  links = new Links(function() {});
+
+  $('#link-filter-button').click(function() {
+    $('#link-filter-options').slideToggle('slow');
+  });
+  
+  var applyFilter = function() { 
+    var filterRegexp = $('#name-filter').val();
+    links.setFilter(filterRegexp);
+    links.renderLinks();
+  };
+  $('#link-filter-start').click(applyFilter);
+  $('#name-filter').keypress(function(e) {
+    if (e.which == 13)  applyFilter();
+  });
+  $('#link-filter-clear').click(function() {
+	$('#name-filter').val('');
+    links.clearFilter();
+    links.renderLinks();   
+  });
+  
+  $('#link-refresh-button').click(function() {
+	links.clearLinks();
+	links.readLinks(function() {
+		applyFilter();
+	});	
+  });
+  
+  var linkVisible = false;
+  var commentVisible = false;
+  
+  $('#new-link').click(function() {
+    if (commentVisible) {
+      $('#new-comment-container').slideToggle('fast');  
+      commentVisible = false;
+    }
+    $('#new-link-container').slideToggle('slow');
+    linkVisible = !linkVisible;
+  });
+
+  $('#new-comment').click(function() {
+      if (linkVisible) {
+        $('#new-link-container').slideToggle('fast');  
+        linkVisible = false;
+      }
+    $('#new-comment-container').slideToggle('slow');
+    commentVisible = !commentVisible;
+  });
+  
+  var uiSelect = $('#ui-select');
+  $.each(links.getRendererNames(), function(i, name) {
+    $("<option/>").val(i).text(name).appendTo(uiSelect);
+  });
+  uiSelect.change(function() {
+	$("#ui-select option:selected").each(function () {
+		curRendererNum = $(this).val();
+		links.setCurrentLinkRenderer(curRendererNum);
+		links.renderLinks();
+	});
+  });
+  
+  r = Raphael('leiste', 10,10, 800, 400);
+  var c = r.rect(20,20,100,200);
+  c.attr('fill', '#fff');
+  
+});
+  </script>
+	
+	
+	</body>
+</html>

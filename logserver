@@ -1,0 +1,120 @@
+#! /usr/bin/ruby
+
+require 'rubygems'
+require 'sqlite3'
+require 'webrick'
+require 'json'
+
+DB = "plog.sqlite"
+
+SONDERZEICHEN = [ [/\344/, '&auml;'], [/\366/, '&ouml;'], [/\374/, '&uuml;'], 
+                  [/\304/, '&Auml;'], [/\326/, '&Ouml;'], [/\334/, '&Uuml;'],
+                  [/\337/, '&szlig;'] 
+                ]
+
+def escape_sonderzeichen(str)
+  SONDERZEICHEN.inject(str.dup) { |str, so| str.gsub(so[0], so[1]) }
+end
+
+def collect_rows(db, stmt)
+	arr = []
+	db.execute2(stmt) do |r| #first element is name of columns!
+		arr << r
+	end
+	arr
+end
+
+def open_db()
+
+	db = SQLite3::Database.new(DB)	
+	db.execute('create table IF NOT EXISTS links (pkey INTEGER PRIMARY KEY, url TEXT, comment TEXT, time DATE);')
+
+
+	#db.create_function('regexp', 2, proc { |pattern, expr| 
+	#	regexp = Regexp.new(pattern.to_s, Regexp::IGNORECASE)
+	#	expr.to_s.match(regexp) ? 1 : 0
+	#})
+	#db.create_function('regexp', 2, :numeric) do |func, pattern, expr| 
+	#	regexp = Regexp.new(pattern.to_s, Regexp::IGNORECASE)
+	#	func.result = expr.to_s.match(regexp) ? 1 : 0
+	#end
+	yield db
+	db.close
+end
+
+def insert_sample_links()    
+    open_db { |db|
+      vals = [  ['http://google.com', 'Eine Suchseite..', '2010-10-25 12:15'],
+                ['http://heise.de', 'Hier lese ich gerne Nachrichten und auch mal das Forum', '2011-01-12 18:50'],
+                ['http://gmx.de', 'Emails online', '2010-11-24 23:33'],
+                ['http://gmx2.de', 'Emails online2', '2010-11-24 21:33']
+             ]
+      vals.each { |v|
+        db.execute("insert into links (url, comment, time) values (?, ?, ?);", v)
+      }
+    }
+end
+
+def select_from_db(select_stmt)
+  arr = nil
+  open_db { |db|
+    arr = collect_rows(db, select_stmt)
+  }
+  arr
+end
+
+def send_array(res, arr)	
+	res.status = 200
+	res['Content-Type'] = 'text/plain'  
+	jarr = JSON.generate(arr)	
+	#puts jarr
+	res.body = jarr
+end
+
+# hey, sqlinjectors of the worlds, let me introduce to you:
+def insert_link(url, comment)
+    open_db { |db|
+      db.execute("insert into links (url, comment, time) values ('#{url}', '#{comment}', datetime('now', 'localtime'));")      
+    }
+end
+
+def put_link(req, res)
+  url, comment = req.query['url'], req.query['comment']  
+  comment = escape_sonderzeichen(comment.strip) if comment
+  if not (url.nil? or url.empty?)
+    url = url.strip
+    if url =~ /\./
+      url = "http://#{url}" unless url =~ /^https{0,1}:\/\//
+      insert_link(url, comment)
+    end
+  elsif comment
+    insert_link('', comment)
+  end
+  res.set_redirect(WEBrick::HTTPStatus::MovedPermanently, '/c.html')
+end
+
+def list_links(req, res)
+  arr = select_from_db('select * from links;')
+  send_array(res, arr)
+end
+
+
+#insert_sample_links()
+#__END__
+
+if $0 == __FILE__ then
+	server = WEBrick::HTTPServer.new(:Port => 8080)
+
+	server.mount('/', WEBrick::HTTPServlet::FileHandler, './')
+	# "put" sth
+	server.mount_proc('/p') { |req, resp| put_link(req, resp) }
+  server.mount_proc('/l') { |req, resp| list_links(req, resp) }
+	
+	['INT', 'TERM'].each do |signal|
+		trap(signal) { 
+			server.shutdown 
+		} 
+	end
+
+	server.start
+end

@@ -1,0 +1,67 @@
+<html>
+<head>
+<link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Ubuntu:regular,bold&subset=Latin">
+<style type="text/css">
+  body { font-family: ubuntu; }
+  .result { display:none; font-weight:bold; /*margin-left: 24px;*/}
+</style>
+<script>
+function openPlog() {
+	chrome.tabs.create({'url': 'http://localhost:8080/c.html'});
+}
+function $(elementId) { return document.getElementById(elementId); }
+function toggleVisible(bool, el) { 
+  if (!bool) { 
+	el.style.display = "none";  
+	el.style.visibility = "hidden";
+  } else {
+    el.style.display = "inline";
+    el.style.visibility = "visible";
+  }
+}
+function sendRequest() {
+  toggleVisible(false, $('err'));	// reset 'err' as it might be visible
+  chrome.tabs.getSelected(null, function(tab) {
+    var xhr = new XMLHttpRequest();
+    xhr.onreadystatechange = function(data) {
+      if (xhr.readyState == 4) {
+        var displayElement = null;
+        if (xhr.status == 200) {  		  
+          displayElement = "success";   
+		  $('plog').disabled = true;
+        } else {          
+          displayElement = "err";
+        }
+		toggleVisible(true, $(displayElement));        
+      }
+    };    
+    var params = 'url='+escape(tab.url)+'&comment='+escape($('comment').value);
+    xhr.open('POST', 'http://localhost:8080/p', true);
+    xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+    xhr.send(params);
+  });
+}
+
+onload = function() {
+  $('plog').onclick = function() {  
+    sendRequest();
+  };  
+  chrome.tabs.getSelected(null, function(tab) {
+    var commentArea = $('comment');  
+    commentArea.innerText = tab.title;
+    commentArea.select();
+  });  
+};
+</script>
+</head>
+<body>
+  <!-- span style="margin-left:16px; margin-bottom: 4px;" -->Neuer Kommentar</span>
+  <a href="javascript:openPlog();" style="float:right;">Plog</a>
+  <br />
+  <textarea cols="54" rows="5" id="comment"></textarea>
+  <br />
+  <input type="submit" value="OK" id="plog" />
+  <span id="success" class="result" style="color:green;">Gespeichert!</span>
+  <span id="err" class="result" style="color:red;">Fehler beim Speichern!</span>	
+</body>
+</html>

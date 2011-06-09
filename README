@@ -1,0 +1,19 @@
+Ein Skript, das ein privates Log bereitstellt: Bestehend aus einem Server-Backend, einer Client-HTML-Seite und einer Chromium-Extension.
+
+ist als Entwurf eines persönlichen Logs zu verstehen und besteht bisher aus drei Komponenten:
+
+    Ein Chromium-Plugin: Fügt einen kleinen Knopf neben der Adressleiste ein; wenn man drauf klickt, öffnet sich eine kleine Textbox, die einen Kommentar entgegennimmt. Klickt man "OK" wird der (laufende) Webserver (auf der eigenen Maschine!) die Anfrage entgegennehmen und in einer Datenbank ablegen. Ein Klick auf "Plog" führt zur übersicht über die Einträge.
+    Ein Webrick-Webserver-Prozess: Liefert den "Background", indem er a) Einträge entgegennimmt und abspeichert und b) vorhandene Einträge anfragen lässt.
+    Eine Webseite, die die vorhandenen Einträge darstellt, durchsuchbar macht und auch neue Einträge entgegennimmt.
+
+Wofür soll das gut sein? Ich möchte eine möglichst einfache Implementierung eines "persönlichen Logs", das heißt eines "gut erreichbaren" Programms, mit dem man eine Art "Zeitleiste" seiner Surfvorgänge, Kommentaren dazu und auch sonstigen Kommentaren erzeugen kann.
+
+Ich finde, dass es nicht unbedingt klug sein muss, dafür Online-Dienste, die es selbstverständlich in riesiger Zahl schon gibt, zu nutzen. Zumindest ich habe gerne meine Daten auch auf von mir verwalteten Systemen soweit das praktikabel ist. Und plog will es praktikabel machen, für sich selbst, seine Familie und Freunde so einen Dienst zu betreiben.
+
+Wer sich plog genauer ansieht wird feststellen, dass es wirklich sehr einfach ist: Es ist eine erste lauffähige zusammengebaute Version, mit der ich gerne zum Spielen mit der Idee einladen möchte.
+
+Was noch fehlt? In meinem Entwurf sind noch Benutzerverwaltung, eine Möglichkeit Einträge zu kategorisieren, ein Werkzeug (HTML-Seite) zur Eintragsverwaltung und eine (transparente) Möglichkeit der Serversynchronisation. Eine Optimierung der Web-API steht auch noch an. Eine PHP-Version des Servers, die MySQL nutzt. Einbindung in weitere Browser und Plattformen (Android).
+
+Das hier ladbare Archiv enthält eine Windows-DLL von SQLite.
+
+
