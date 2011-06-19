@@ -18,6 +18,18 @@ function getStoredStartPage() {
   return sp ? (su + sp) : (su + '/c.html');
 }
 
+function getStoredCopyTitle() {
+  var copy = localStorage["copy_title"];
+  if (null != copy) {
+	if ("false" === copy)
+		return false;
+	else
+		return true;
+  } else {
+	return true;
+  }
+}
+
 function openPlog() {
 	chrome.tabs.create({'url': getStoredStartPage()});
 }
@@ -31,20 +43,27 @@ function toggleVisible(bool, el) {
     el.style.visibility = "visible";
   }
 }
+var saved;
 function sendRequest() {
   toggleVisible(false, $('err'));	// reset 'err' as it might be visible
+  $('plog').disabled = true;
+  //wait some time, and dont display if saving was really fast
+  saved = false;
+  setTimeout(function() { if (!saved) toggleVisible(true, $('status'));	}, 50);  
   chrome.tabs.getSelected(null, function(tab) {
     var xhr = new XMLHttpRequest();
     xhr.onreadystatechange = function(data) {
       if (xhr.readyState == 4) {
+		saved = true;
         var displayElement = null;
         if (xhr.status == 200) {  		  
-          displayElement = "success";   
-		  $('plog').disabled = true;
+          displayElement = "success";   		  
         } else {          
           displayElement = "err";
+		  $('plog').disabled = false;
         }
-		toggleVisible(true, $(displayElement));        
+		toggleVisible(false, $('status'));	
+		toggleVisible(true, $(displayElement));        		
       }
     };    
     var params = 'url='+escape(tab.url)+'&comment='+escape($('comment').value);
@@ -60,19 +79,28 @@ onload = function() {
   };  
   chrome.tabs.getSelected(null, function(tab) {
     var commentArea = $('comment');  
-    commentArea.innerText = tab.title;
+	console.log(getStoredCopyTitle());
+	if (getStoredCopyTitle())
+	  commentArea.innerText = tab.title;
     commentArea.select();
   });  
+  
+  /*
+	use in a background_page (http://code.google.com/chrome/extensions/background_pages.html)
+  chrome.tabs.onCreated.addListener(function(tab) {});
+	to implement autoplog
+  */
 };
 </script>
 </head>
 <body>
-  <!-- span style="margin-left:16px; margin-bottom: 4px;" -->Neuer Kommentar</span>
+  <!-- span style="margin-left:16px; margin-bottom: 4px;" Neuer Kommentar</span>-->
   <a href="javascript:openPlog();" style="float:right;">Plog</a>
   <br />
   <textarea cols="54" rows="5" id="comment"></textarea>
   <br />
   <input type="submit" value="OK" id="plog" />
+  <span id="status" class="result" style="color:orange;">Speichere..</span>
   <span id="success" class="result" style="color:green;">Gespeichert!</span>
   <span id="err" class="result" style="color:red;">Fehler beim Speichern!</span>	
 </body>

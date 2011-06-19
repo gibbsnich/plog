@@ -52,7 +52,7 @@ Links.prototype.prepareCommentForFilter = function (comment) {
 };
   
 Links.prototype.setFilter = function (nameRegexp) {
-  nameRegexp = nameRegexp.replace(/[^A-Za-z0-9 ]/g, '.');
+  nameRegexp = nameRegexp.replace(/[^A-Za-z0-9 \(\)\[\]\*\+\{\}]/g, '.');
   nameRegexp = new RegExp(nameRegexp, 'i');
   for (var lNum = 0; lNum < this.links.length; lNum++) {
     var linkData = this.links[lNum];

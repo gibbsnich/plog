@@ -1,5 +1,10 @@
 <html>
-<head><title>Plog Options</title></head>
+<head>
+<title>Plog Options</title>
+<link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Ubuntu:regular,bold&subset=Latin">
+		<style type="text/css">
+		  body { font-family: ubuntu; }
+		</style>
 <script type="text/javascript">
 function $(elementId) { return document.getElementById(elementId); }
 
@@ -12,6 +17,9 @@ function save_options() {
   var server = $("server-url").value;
   localStorage["server_url"] = server;
 
+  var copyVal = $("copy-title").checked;  
+  localStorage["copy_title"] = copyVal;
+  
   // Update status to let user know options were saved.
   var status = $("status");
   status.innerHTML = "Optionen gespeichert";
@@ -38,12 +46,24 @@ function restore_options() {
   if (server) {
     $("server-url").value = server;
   }
+  
+  var copy = localStorage["copy_title"];
+  if (null != copy) {
+	if ("false" === copy)
+		$("copy-title").checked = false;
+	else
+		$("copy-title").checked = true;
+  } else {
+	$("copy-title").checked = false;
+  }
+  
+  
 }
 
 </script>
-
+</head>
 <body onload="restore_options()">
-<table>
+<table style="margin: 24px;">
 <tr>
 <td>Plog Server: </td>
 <td><input type="text" id="server-url"/></td>
@@ -55,10 +75,24 @@ function restore_options() {
  <option value="/s.html">Suchseite</option>
 </select>
 </td></tr>
-<tr><td align="center">
-<button onclick="save_options()">Speichern</button>
+<tr>
+<td>Seitentitel &uuml;bernehmen?</td>
+<td>
+<input type="checkbox" id="copy-title" checked="checked" />
 </td>
-<td><span id="status"/></td>
+</tr>
+<!--
+<tr>
+<td>Autoplog aktivieren?</td>
+<td>
+<input type="checkbox" id="autoplog" />
+</td>
+</tr>
+-->
+<tr><td align="center">
+<button onclick="save_options()" style="margin-top: 16px;">Speichern</button>
+</td>
+<td><span id="status" style="color:green;"/></td>
 </tr></table>
 
 

@@ -7,6 +7,7 @@
 		  #link-container { height: 90%; overflow:auto;}
 		  #link-container ol { list-style: none; }
 		  .selected { background-color: #ccc; }
+		  .sm { font-size:0.8em; }
 		</style>
 	<script type="text/javascript" src="jquery-1.6.1.min.js"></script>
 	<script type="text/javascript" src="plog.js"></script>
@@ -16,14 +17,14 @@
 <div style="text-align:center;width:100%;">
   <div>
     <input type="text" id="suchbox" size="80"/>
-    <input type="submit" id="clear" value="[X]" style="margin-left: 20px;"/>
   </div>
   <div id="link-container" style="text-align:left;"/>
 </div>
 
 <div style="display:none;" id="link-cell-template">
-<a><span id="link-url"/></a><br/>
-<span id="link-comment" style="font-size:0.8em;margin-left:20px;"/>
+<!-- <span class="sm" style="float:right;">[<span id="link-date"></span>]</span> -->
+<a><span id="link-url"></span></a><br/>
+<span class="sm" style="margin-left:20px;"><span id="link-comment"></span></span>
 </div>
 
   <script type="text/javascript">  
@@ -44,15 +45,21 @@ function selectShow() {
   if (curSelect > -1) {
     var divs = $('#link-container div')
     divs.removeClass('selected');
-    divs.eq(curSelect).addClass('selected');
+	var el = divs.eq(curSelect);
+    el.addClass('selected');
+	/*
+	var currentHeight = el.outerHeight(), offset = el.offset();
+    var st  = Math.round( offset.top - currentHeight - ($(window).height()/3) );
+    $('html,body').scrollTop(st);	*/
   }
 }
 
 function selectOpen() {
   if (curSelect > -1) {
-    var divs = $('#link-container').find('div');
+    var divs = $('#link-container li');
     var v = divs.eq(curSelect).find('a').attr('href');
-    window.location.href = v;
+	if (undefined !== v)
+		window.location.href = v;
   }
 }
 
@@ -60,7 +67,7 @@ var links = null;
   
 $(document).ready(function() {
   links = new Links(function() {
-    maxSelect = $('#link-container').find('li').length - 1;
+    maxSelect = $('#link-container li').length - 1;
   });
   links.setShortenUrlText(false);
   links.setCurrentLinkRenderer(2);
@@ -70,9 +77,10 @@ $(document).ready(function() {
     links.setFilter(filterRegexp);
     links.renderLinks();
     curSelect = 0;
-    maxSelect = $('#link-container').find('li').length - 1;    
+    maxSelect = $('#link-container li').length - 1;    
     selectShow();
   };
+  applyFilter();
   var clearFilter = function() {
     $('#suchbox').val('');
     applyFilter();
@@ -84,10 +92,6 @@ $(document).ready(function() {
     if (kc == 13 || kc == 38 || kc == 40 || kc == 27) 
      return;
     applyFilter();  
-  });
-  
-  $('#clear').click(function() {
-    clearFilter();
   });
 
   $(document).keydown(function(e) {
@@ -111,6 +115,7 @@ $(document).ready(function() {
     }
   });
   $('#suchbox').focus();
+  //TODO selecting with keyboard might select invisible items, scrolling
 });
   </script>
 </body>
